@@ -1,0 +1,15 @@
+.DS_Store
+.cache
+.vscode
+Thumbs.db
+desktop.ini
+.log
+.tmp
+.bak
+.swp
+node_modules
+web_modules
+dist
+build
+.env
+.env.local
