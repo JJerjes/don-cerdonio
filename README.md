@@ -47,6 +47,11 @@ don-cerdonio:
         ├── partials
             ├── footer
             └── header
+        ├── apple-touch-icon.png 
+        ├── favicon-96x96.png
+        ├── favicon.ico
+        ├── favicon.svg
+        └── site.webmanifest
     index.html
 ├── .editorconfig
 ├── .eslintrc.json    
