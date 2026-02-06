@@ -1,4 +1,140 @@
-/* El archivo maestro de estilos. 
+/* 
+El archivo maestro de estilos. 
 Aquí definiremos la "fuente gordita", 
 la animación de columpio y el diseño 
-responsivo para móviles. */
+responsivo para móviles. 
+*/
+
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+body {
+  display: grid;
+  grid-template-areas:
+    'header'
+    'main'
+    'footer';
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+  scroll-padding-block-start: var(--white);
+  overflow-x: hidden;
+}
+
+
+/*---------------------
+    src/index.html
+---------------------*/
+
+:root {
+  --primary: #D35400;
+  --dark: #2C3E50;
+  --white: #FFF;
+  --font-main: 'Titan One', sans-serif;
+  --font-btn: 'Montserrat', sans-serif;
+}
+
+.splash-container {
+  grid-area: main;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  min-height: 100vh;
+
+  .brand-group {
+    text-align: center;
+    transform-origin: top center;
+    animation: swing 3s ease-in-out infinite;
+
+    .brand-title {
+      font-weight: 900;
+      text-transform: uppercase;
+      color: var(--dark);
+      line-height: 0.85;
+      font-size: 3rem;
+      text-align: center;
+      font-family: var(--font-main);
+
+      text-shadow:
+        -3px -3px 0 var(--dark),
+        3px -3px 0 #2C3E50,
+        -3px 3px 0 #2C3E50,
+        3px 3px 0 #2C3E50,
+        6px 6px 0px rgba(0, 0, 0, 0.2);
+
+      @media (min-width: 375px) {
+        font-size: 3.7rem;
+      }
+
+      @media (min-width: 425px) {
+        font-size: 4.3rem;
+      }
+
+      @media (min-width: 768px) {
+        font-size: 7rem;
+      }
+
+      .highlight {
+        color: var(--primary);
+      }
+    }
+  }
+
+  .welcome-form {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 320px;
+    gap: 15px;
+  }
+
+  #username {
+    padding: 15px;
+    border: 1px solid var(--dark);
+    border-radius: 8px;
+    font-weight: 600;
+    text-align: center;
+    font-size: 1rem;
+    font-family: var(--font-btn);
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+  }
+
+  #btn-enter {
+    padding: 15px;
+    background-color: var(--primary);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-family: var(--font-btn);
+    cursor: pointer;
+    transition: transform 0.2s;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+}
+
+@keyframes swing {
+  0% {
+    transform: rotate(5deg);
+  }
+
+  50% {
+    transform: rotate(-5deg);
+  }
+
+  100% {
+    transform: rotate(5deg);
+  }
+}

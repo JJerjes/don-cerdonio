@@ -45,8 +45,8 @@ don-cerdonio:
         ├── json
             ├── define.json
         ├── partials
-            ├── footer
-            └── header
+            ├── footer.html
+            └── header.html
         ├── apple-touch-icon.png 
         ├── favicon-96x96.png
         ├── favicon.ico
