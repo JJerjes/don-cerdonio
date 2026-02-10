@@ -1,11 +1,12 @@
-<!-- aqui se vera lo que ofrece la empresa -->
-
- <!DOCTYPE html>
- <html lang="en">
- <head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Your Order | Don Cerdonio</title>
+
+  <meta name="description" content="Check your order from Don Cerdonio.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,12 +17,45 @@
   <link rel="stylesheet" href="../css/style.css">
   <script type="module" src="../js/cart.js"></script>
 
- </head>
- <body>
+</head>
+<body class="cart-page">
 
-  <header>
-    <p><span id="user-display"></span>, ¡ Welcome to Don Cerdonio !</p>
-  </header>
+  <header id="main-header" class="divider"></header>
 
- </body>
- </html>
+  <main class="container">
+    <h1 class="main-title">Enjoy the best pork</h1>
+
+    <div class="search-container">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="search-input" placeholder="Seach"> 
+      </div>
+    </div>
+
+    <section class="category-section">
+      <h2 class="section-label">Category</h2>
+      <div class="category-tabs">
+        <button class="tab-btn active" data-category="portion">Portion</button>
+        <button class="tab-btn" data-category="drink">Drink</button>
+      </div>
+    </section>
+
+    <section id="product-list" class="product-grid">
+      <p class="loading-msg">Loading delicious food...</p>
+    </section>
+
+  </main>
+
+  <footer id="main-footer"></footer>
+
+  <dialog id="cart-error-modal" class="modal">
+    <div class="modal-content">
+      <i class="fa-solid fa-circle-exclamation error-icon"></i>
+      <h2>Hey, buddy!</h2>
+      <p>To go to checkout, you must first add a product to your cart!</p>
+      <button id="close-modal" class="btn-primary">Understood 🐷</button>
+    </div>
+  </dialog>
+
+</body>
+</html>

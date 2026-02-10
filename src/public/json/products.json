@@ -1,0 +1,18 @@
+[
+  {
+    "id": "p1",
+    "name": "Classic Roasted Pork",
+    "category": "portion",
+    "calories": 450,
+    "price": 12.50,
+    "image": "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=400"
+  },
+  {
+    "id": "d1",
+    "name": "Purple corn drink",
+    "category": "drink",
+    "calories": 120,
+    "price": 3.00,
+    "image": "https://images.unsplash.com/photo-1595981267035-7b04ca84a82d?q=80&w=400"
+  }
+]
