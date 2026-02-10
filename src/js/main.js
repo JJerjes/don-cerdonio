@@ -1,5 +1,3 @@
-// Dirigir al cliente hacia screen/cart/indexedDB.html
-
 document.addEventListener('DOMContentLoaded', () => {
   const loginForm = document.querySelector('#login-form');
   const splashScreen = document.querySelector('#splash-screen');
@@ -7,7 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const existingUser = sessionStorage.getItem('donCerdonio_user');
 
   if (existingUser) {
-    // splashScreen.classList.add('hidden');
     initStore();
   }
 
@@ -23,7 +20,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       setTimeout(() => {
         splashScreen.classList.add('hidden');
-        // Success message in plain text to avoid console highlighting
         console.log(`${name}, Welcome to Don Cerdonio `);
         initStore(name);
       }, 400);
@@ -32,6 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initStore() {
-  window.location.href = './cart/index.html';
+  window.location.href = 'cart/index.html';
 }
 

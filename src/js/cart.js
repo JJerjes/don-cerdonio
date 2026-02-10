@@ -69,7 +69,6 @@ async function initCart() {
       const html = productCardTemplate(product);
       productListElement.insertAdjacentHTML('beforeend', html);
 
-      // Verificamos si el producto ya está en el carrito para mantener el estado visual
       if (cart.includes(product.id.toString())) {
         const cardElement = productListElement.lastElementChild;
         const btn = cardElement.querySelector('.add-to-cart-btn');
@@ -81,7 +80,6 @@ async function initCart() {
           btn.style.color = '#2C3E50';
         }
 
-        // Muestra el consejo si ya estaba en el carrito
         if (advice) {
           advice.classList.remove('hidden');
         }
@@ -89,13 +87,11 @@ async function initCart() {
     });
   };
 
-  // Escuchador de clics para agregar al carrito y mostrar el consejo
   productListElement.addEventListener('click', (e) => {
     if (e.target.classList.contains('add-to-cart-btn')) {
       const productId = e.target.dataset.id;
       let cart = JSON.parse(localStorage.getItem('donCerdonio_cart')) || [];
 
-      // Buscamos el contenedor de la tarjeta y su respectivo advice-box
       const card = e.target.closest('.product-card');
       const adviceBox = card.querySelector('.advice-box');
 
@@ -106,7 +102,6 @@ async function initCart() {
         e.target.textContent = 'Added! 🐷';
         e.target.style.backgroundColor = '#ffd100';
 
-        // --- AQUÍ SE MUESTRAN LAS CALORÍAS ---
         if (adviceBox) {
           adviceBox.classList.remove('hidden');
         }
@@ -158,7 +153,7 @@ async function initCart() {
   });
 
   try {
-    const response = await fetch('/json/products.json');
+    const response = await fetch('../public/json/products.json');
     allProducts = await response.json();
 
     const initialProducts = allProducts.filter(p => p.category === 'portion');

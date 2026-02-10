@@ -7,8 +7,8 @@ export function renderWithTemplate(templateFn, parentElement, data, callback) {
 }
 
 export async function loadHeaderFooter() {
-  const headerTemplate = await fetch('/partials/header.html').then(res => res.text());
-  const footerTemplate = await fetch('/partials/footer.html').then(res => res.text());
+  const headerTemplate = await fetch('../public/partials/header.html').then(res => res.text());
+  const footerTemplate = await fetch('../public/partials/footer.html').then(res => res.text());
 
   const headerElement = document.querySelector('#main-header');
   const footerElement = document.querySelector('#main-footer');
