@@ -520,3 +520,41 @@ body {
   transform: translateY(2px);
   box-shadow: 0 2px 0 #a04000;
 }
+
+@keyframes cart-bump {
+  0% {
+    transform: scale(1);
+  }
+
+  10% {
+    transform: scale(1, 2);
+  }
+
+  30% {
+    transform: scale(1.1);
+  }
+
+  50% {
+    transform: scale(1.2);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.cart-link {
+  .cart-icon-active {
+    animation: cart-bump 0.4s ease-out;
+    color: var(--primary);
+  }
+
+  .cart-badge {
+    background-color: #e74c3c;
+    transition: all 0.3s ease;
+
+    &.bump {
+      animation: cart-bump 0.3s ease-out;
+    }
+  }
+}

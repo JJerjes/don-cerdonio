@@ -3,11 +3,20 @@ import { loadHeaderFooter, productCardTemplate, updateWeather } from './utils.mj
 function updateCartBadge() {
   const cart = JSON.parse(localStorage.getItem('donCerdonio_cart')) || [];
   const badge = document.querySelector('#cart-count');
+  const cartIcon = document.querySelector('.cart-link i');
+
   if (badge) {
     badge.textContent = cart.length;
+
     badge.classList.remove('bump');
     void badge.offsetWidth;
     badge.classList.add('bump');
+
+    if (cartIcon && cart.length > 0) {
+      cartIcon.classList.remove('cart-icon-active');
+      void cartIcon.offsetWidth;
+      cartIcon.classList.add('cart-icon-active');
+    }
   }
 }
 
@@ -107,6 +116,12 @@ async function initCart() {
         }
 
         updateCartBadge();
+
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: 'smooth'
+        });
       }
     }
   });
