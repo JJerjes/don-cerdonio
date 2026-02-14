@@ -1,60 +1,247 @@
-import { loadHeaderFooter, productCardTemplate, updateWeather } from './utils.mjs';
+/* global L */
+import { loadHeaderFooter, productCardTemplate, updateWeather, checkoutTemplate, cartItemTemplate } from './utils.mjs';
+import { getCart, addToCart, removeFromCart } from './Cart.mjs';
+
+let allProducts = [];
+
+const storeCoords = [-12.141797, -76.943976];
+
+function getDistanceInMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371e3;
+  const phi1 = lat1 * Math.PI / 180;
+  const phi2 = lat2 * Math.PI / 180;
+  const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+  const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+
+  const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+    Math.cos(phi1) * Math.cos(phi2) *
+    Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 function updateCartBadge() {
-  const cart = JSON.parse(localStorage.getItem('donCerdonio_cart')) || [];
+  const cart = getCart();
   const badge = document.querySelector('#cart-count');
   const cartIcon = document.querySelector('.cart-link i');
 
   if (badge) {
     badge.textContent = cart.length;
-
     badge.classList.remove('bump');
     void badge.offsetWidth;
     badge.classList.add('bump');
 
     if (cartIcon && cart.length > 0) {
-      cartIcon.classList.remove('cart-icon-active');
-      void cartIcon.offsetWidth;
       cartIcon.classList.add('cart-icon-active');
+    } else if (cartIcon) {
+      cartIcon.classList.remove('cart-icon-active');
     }
   }
 }
 
-function handleCheckoutNavigation(event) {
-  const cart = JSON.parse(localStorage.getItem('donCerdonio_cart')) || [];
-  const modal = document.querySelector('#cart-error-modal');
+function updateOrderSummary() {
+  const items = document.querySelectorAll('.checkout-item');
+  let subtotal = 0;
 
-  if (cart.length === 0) {
-    event.preventDefault();
-    modal.showModal();
-  } else {
-    if (event.currentTarget.id === 'btn-checkout') {
-      window.location.href = '../../cart/checkout.html';
-    }
+  items.forEach(item => {
+    const priceText = item.querySelector('.item-price').textContent;
+    const price = parseFloat(priceText.replace(/[^0-9.]/g, ''));
+    if (!isNaN(price)) subtotal += price;
+  });
+
+  const subtotalElement = document.querySelector('#subtotal-amount');
+  const shippingElement = document.querySelector('#shipping-cost');
+  const totalElement = document.querySelector('#total-amount');
+
+  const shippingText = shippingElement ? shippingElement.textContent : '0';
+  const shippingCost = parseFloat(shippingText.replace(/[^0-9.]/g, '')) || 0;
+
+  if (subtotalElement) subtotalElement.textContent = `$ ${subtotal.toFixed(2)}`;
+
+  if (totalElement) {
+    const finalTotal = subtotal + shippingCost;
+    totalElement.textContent = `$ ${finalTotal.toFixed(2)}`;
   }
 }
+
+function setupCheckoutEvents() {
+  const listContainer = document.querySelector('#checkout-items-list');
+  if (!listContainer) return;
+
+  listContainer.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+
+    const id = btn.dataset.id;
+    const itemCard = btn.closest('.checkout-item');
+    const qtyInput = itemCard.querySelector('.quantity-input');
+    const priceDisplay = itemCard.querySelector('.item-price');
+
+    const product = allProducts.find(p => p.id.toString() === id.toString());
+    if (!product) return;
+
+    if (btn.classList.contains('plus')) {
+      let qty = parseInt(qtyInput.value);
+      qty++;
+      qtyInput.value = qty;
+      priceDisplay.textContent = `$ ${(product.price * qty).toFixed(2)}`;
+    }
+
+    if (btn.classList.contains('minus')) {
+      let qty = parseInt(qtyInput.value);
+      if (qty > 1) {
+        qty--;
+        qtyInput.value = qty;
+        priceDisplay.textContent = `$ ${(product.price * qty).toFixed(2)}`;
+      }
+    }
+
+    if (btn.classList.contains('delete-item-btn')) {
+      removeFromCart(id);
+      itemCard.remove();
+      updateCartBadge();
+      const cart = getCart();
+      if (cart.length === 0) showCheckoutView();
+    }
+    updateOrderSummary();
+  });
+}
+
+export async function initDeliveryMap() {
+  try {
+    const container = L.DomUtil.get('map');
+    if (container != null) {
+      container._leaflet_id = null;
+    }
+
+    const map = L.map('map', {
+      tap: false,
+      zoomControl: true
+    }).setView(storeCoords, 15);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    const marker = L.marker(map.getCenter()).addTo(map);
+
+    const calculateAndDisplay = (customerLatLng) => {
+      const distance = getDistanceInMeters(
+        storeCoords[0], storeCoords[1],
+        customerLatLng.lat, customerLatLng.lng
+      );
+
+      let cost = (distance <= 1000) ? 3.00 : (distance <= 3000) ? 7.00 : 12.00;
+
+      const shippingElement = document.querySelector('#shipping-cost');
+      if (shippingElement) shippingElement.textContent = `$ ${cost.toFixed(2)}`;
+
+      window.currentShippingCost = cost;
+      updateOrderSummary();
+    };
+
+    map.on('move', () => {
+      marker.setLatLng(map.getCenter());
+    });
+
+    map.on('moveend', async () => {
+      const center = map.getCenter();
+      calculateAndDisplay(center);
+
+      const addressBox = document.querySelector('#address-display');
+      if (addressBox) addressBox.textContent = 'Buscando dirección...';
+
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${center.lat}&lon=${center.lng}`);
+        const data = await response.json();
+        if (addressBox) addressBox.textContent = data.display_name;
+      } catch (error) {
+        if (addressBox) addressBox.textContent = 'Dirección no encontrada';
+      }
+    });
+
+    calculateAndDisplay(map.getCenter());
+
+  } catch (error) {
+    console.warn('Aviso de Leaflet detectado y omitido para el usuario.');
+  }
+}
+
+function showCheckoutView() {
+  const homeView = document.querySelector('#home-view');
+  const checkoutView = document.querySelector('#checkout-view');
+  const footer = document.querySelector('#main-footer');
+
+  if (!homeView || !checkoutView) return;
+
+  homeView.classList.add('hidden');
+  checkoutView.classList.remove('hidden');
+  footer.classList.add('hidden');
+
+  checkoutView.innerHTML = checkoutTemplate();
+
+  const itemsListContainer = document.querySelector('#checkout-items-list');
+  const cartIds = getCart();
+
+  if (itemsListContainer) {
+    const cartProducts = allProducts.filter(p => cartIds.includes(p.id.toString()));
+
+    if (cartProducts.length > 0) {
+      itemsListContainer.innerHTML = cartProducts.map(product => cartItemTemplate(product, 1)).join('');
+      setupCheckoutEvents();
+      updateOrderSummary();
+
+      setTimeout(() => {
+        initDeliveryMap();
+      }, 300);
+
+    } else {
+      itemsListContainer.innerHTML = '<p style="text-align:center; padding: 20px;">Your cart is empty 🐷</p>';
+    }
+  }
+
+  document.querySelector('#back-to-products').addEventListener('click', () => {
+    homeView.classList.remove('hidden');
+    checkoutView.classList.add('hidden');
+    footer.classList.remove('hidden');
+    checkoutView.innerHTML = '';
+  });
+}
+
+const renderProductsFromData = (dataList) => {
+  const productListElement = document.querySelector('#product-list');
+  if (!productListElement) return;
+
+  productListElement.innerHTML = '';
+  const cart = getCart();
+
+  if (dataList.length === 0) {
+    productListElement.innerHTML = '<p class="no-results" style="grid-column: 1/-1; text-align:center; padding: 20px;">No products found... 🐷</p>';
+    return;
+  }
+
+  dataList.forEach(product => {
+    const html = productCardTemplate(product);
+    productListElement.insertAdjacentHTML('beforeend', html);
+
+    if (cart.includes(product.id.toString())) {
+      const cardElement = productListElement.lastElementChild;
+      const btn = cardElement.querySelector('.add-to-cart-btn');
+      const advice = cardElement.querySelector('.advice-box');
+
+      if (btn) {
+        btn.textContent = 'Added! 🐷';
+        btn.style.backgroundColor = '#ffd100';
+      }
+      if (advice) advice.classList.remove('hidden');
+    }
+  });
+};
 
 async function initCart() {
   await loadHeaderFooter();
   await updateWeather();
-
-  const cartLink = document.querySelector('.cart-link');
-  const footerBtn = document.querySelector('#btn-checkout');
-  const searchInput = document.querySelector('#search-input');
-  const tabButtons = document.querySelectorAll('.tab-btn');
-  const productListElement = document.querySelector('#product-list');
-  const closeModalBtn = document.querySelector('#close-modal');
-
-  let allProducts = [];
-
-  if (cartLink) cartLink.addEventListener('click', handleCheckoutNavigation);
-  if (footerBtn) footerBtn.addEventListener('click', handleCheckoutNavigation);
-
-  if (closeModalBtn) {
-    closeModalBtn.addEventListener('click', () => {
-      document.querySelector('#cart-error-modal').close();
-    });
-  }
 
   const name = sessionStorage.getItem('donCerdonio_user');
   const userDisplay = document.querySelector('#user-display');
@@ -65,114 +252,56 @@ async function initCart() {
     return;
   }
 
-  const renderProductsFromData = (dataList) => {
-    productListElement.innerHTML = '';
-    const cart = JSON.parse(localStorage.getItem('donCerdonio_cart')) || [];
-
-    if (dataList.length === 0) {
-      productListElement.innerHTML = '<p class="no-results" style="grid-column: 1/-1; text-align:center; padding: 20px;">No products found... 🐷</p>';
-      return;
+  const handleNav = (e) => {
+    e.preventDefault();
+    const cart = getCart();
+    if (cart.length === 0) {
+      document.querySelector('#cart-error-modal').showModal();
+    } else {
+      showCheckoutView();
     }
-
-    dataList.forEach(product => {
-      const html = productCardTemplate(product);
-      productListElement.insertAdjacentHTML('beforeend', html);
-
-      if (cart.includes(product.id.toString())) {
-        const cardElement = productListElement.lastElementChild;
-        const btn = cardElement.querySelector('.add-to-cart-btn');
-        const advice = cardElement.querySelector('.advice-box');
-
-        if (btn) {
-          btn.textContent = 'Added! 🐷';
-          btn.style.backgroundColor = '#ffd100';
-          btn.style.color = '#2C3E50';
-        }
-
-        if (advice) {
-          advice.classList.remove('hidden');
-        }
-      }
-    });
   };
 
-  productListElement.addEventListener('click', (e) => {
-    if (e.target.classList.contains('add-to-cart-btn')) {
-      const productId = e.target.dataset.id;
-      let cart = JSON.parse(localStorage.getItem('donCerdonio_cart')) || [];
+  document.querySelector('.cart-link')?.addEventListener('click', handleNav);
+  document.querySelector('#btn-checkout')?.addEventListener('click', handleNav);
 
-      const card = e.target.closest('.product-card');
-      const adviceBox = card.querySelector('.advice-box');
-
-      if (!cart.includes(productId)) {
-        cart.push(productId);
-        localStorage.setItem('donCerdonio_cart', JSON.stringify(cart));
-
-        e.target.textContent = 'Added! 🐷';
-        e.target.style.backgroundColor = '#ffd100';
-
-        if (adviceBox) {
-          adviceBox.classList.remove('hidden');
-        }
-
-        updateCartBadge();
-
-        window.scrollTo({
-          top: 0,
-          left: 0,
-          behavior: 'smooth'
-        });
-      }
-    }
+  document.querySelector('#close-modal')?.addEventListener('click', () => {
+    document.querySelector('#cart-error-modal').close();
   });
 
-  if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-      const term = e.target.value.toLowerCase().trim();
+  document.querySelector('#search-input')?.addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase().trim();
+    const filtered = allProducts.filter(p =>
+      p.name.toLowerCase().includes(term) || p.category.toLowerCase().includes(term)
+    );
+    renderProductsFromData(filtered);
+  });
 
-      if (term === '') {
-        const activeTab = document.querySelector('.tab-btn.active');
-        const category = activeTab ? activeTab.dataset.category : 'portion';
-        renderProductsFromData(allProducts.filter(p => p.category === category));
-        return;
-      }
-
-      const isDrinkQuery = ['drink', 'water', 'chicha', 'thirst', 'bebida', 'agua'].some(word => term.includes(word));
-      const isFoodQuery = ['food', 'portion', 'meal', 'hungry', 'pig', 'pork', 'comida'].some(word => term.includes(word));
-
-      const filtered = allProducts.filter(product => {
-        const nameMatch = product.name.toLowerCase().includes(term);
-        const categoryMatch = product.category.toLowerCase().includes(term);
-
-        if (isDrinkQuery && product.category === 'drink') return true;
-        if (isFoodQuery && product.category === 'portion') return true;
-
-        return nameMatch || categoryMatch;
-      });
-
-      renderProductsFromData(filtered);
-    });
-  }
-
-  tabButtons.forEach(btn => {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      tabButtons.forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-
-      const category = btn.dataset.category;
-      const filtered = allProducts.filter(p => p.category === category);
+      const filtered = allProducts.filter(p => p.category === btn.dataset.category);
       renderProductsFromData(filtered);
-
-      if (searchInput) searchInput.value = '';
     });
+  });
+
+  document.querySelector('#product-list')?.addEventListener('click', (e) => {
+    if (e.target.classList.contains('add-to-cart-btn')) {
+      const productId = e.target.dataset.id;
+      if (addToCart(productId)) {
+        e.target.textContent = 'Added! 🐷';
+        e.target.style.backgroundColor = '#ffd100';
+        e.target.closest('.product-card').querySelector('.advice-box')?.classList.remove('hidden');
+        updateCartBadge();
+      }
+    }
   });
 
   try {
     const response = await fetch('../public/json/products.json');
     allProducts = await response.json();
-
-    const initialProducts = allProducts.filter(p => p.category === 'portion');
-    renderProductsFromData(initialProducts);
+    renderProductsFromData(allProducts.filter(p => p.category === 'portion'));
   } catch (error) {
     console.error('Error fetching products:', error);
   }

@@ -63,6 +63,4 @@ don-cerdonio:
 ├── README.md
 └── vite.config.js
 
-pero falta estos archivos:
 
-dist
