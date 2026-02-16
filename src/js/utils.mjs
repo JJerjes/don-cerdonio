@@ -138,3 +138,63 @@ export function checkoutTemplate() {
   </div>
   `;
 }
+
+export function paymentFormTemplate(total) {
+  return `
+    <div class="payment-modal animate-fade-in">
+      <div class="payment-content">
+        <h2>Confirm Your Order</h2>
+        <p class="payment-total">Total to pay: <strong>${total}</strong></p>
+
+        <form id="final-payment-form">
+          <section class="form-section">
+            <h3>1. Customer Information</h3>
+            <div class="form-row">
+              <input type="text" id="cust-fname" placeholder="First Name" required>
+              <input type="text" id="cust-lname" placeholder="Last Name" required>
+            </div>
+            <div class="form-row">
+              <input type="text" id="cust-id" placeholder="ID/CE number" pattern="[0-9]{8,9}" title="Please enter 8 or 9 digits" required>
+              <input type="email" id="cust-email" placeholder="Email Address" required>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <h3>2. Payment Details 💳</h3>
+            <div class="form-group">
+              <input type="text" id="card-number" placeholder="Card Number (16 digits)" pattern="[0-9\\s]{16,19}" maxlength="19" required>
+            </div>
+            <div class="form-row">
+              <input type="text" id="card-exp" placeholder="MM/YY" pattern="[0-9]{2}/[0-9]{2}" maxlength="5" required>
+              <input type="text" id="card-cvv" placeholder="CVV" pattern="[0-9]{3}" maxlength="3" required>
+            </div>
+          </section>
+
+          <div class="payment-actions">
+            <button type="submit" class="primary-btn">Confirm Purchase</button>
+            <button type="button" id="cancel-payment" class="secondary-btn">Go Back</button>
+          </div>
+        </form>  
+      </div>
+    </div>
+  `;
+}
+
+export function successOrderTemplate(firstName) {
+  return `
+    <div class="payment-modal animate-fade-in">
+      <div class="payment-content success-content" style="text-align: center; padding: 40px;">
+        <div class="success-icon" style="font-size: 50px; margin-bottom: 20px;">🐷✅</div>
+        <h2 style="color: #2ecc71;">Order Confirmed!</h2>
+        <p style="font-size: 1.2rem; margin-bottom: 20px;">
+          Excellent, <strong>${firstName}</strong>! <br> 
+          Your order is being prepared. 
+        </p>
+        <p style="color: #666;">We have sent a confirmation to your email.</p>
+        <div style="margin-top: 30px;">
+          <div class="loader-bar"></div>
+        </div>
+      </div>
+    </div>
+  `;
+}

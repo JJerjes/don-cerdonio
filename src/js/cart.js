@@ -1,6 +1,8 @@
 /* global L */
-import { loadHeaderFooter, productCardTemplate, updateWeather, checkoutTemplate, cartItemTemplate } from './utils.mjs';
+import { loadHeaderFooter, productCardTemplate, updateWeather, checkoutTemplate, cartItemTemplate, paymentFormTemplate, successOrderTemplate } from './utils.mjs';
 import { getCart, addToCart, removeFromCart } from './Cart.mjs';
+import Alert from './Alert.mjs';
+const myAlert = new Alert();
 
 let allProducts = [];
 
@@ -150,7 +152,7 @@ export async function initDeliveryMap() {
       calculateAndDisplay(center);
 
       const addressBox = document.querySelector('#address-display');
-      if (addressBox) addressBox.textContent = 'Buscando dirección...';
+      if (addressBox) addressBox.textContent = 'looking for direction';
 
       try {
         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${center.lat}&lon=${center.lng}`);
@@ -206,6 +208,119 @@ function showCheckoutView() {
     checkoutView.classList.add('hidden');
     footer.classList.remove('hidden');
     checkoutView.innerHTML = '';
+  });
+
+  document.querySelector('#btn-pay-now')?.addEventListener('click', () => {
+    const fullName = document.querySelector('#full-name').value.trim();
+    if (fullName === '') {
+      myAlert.render('Please enter who will be receiving your order 🐷');
+      document.querySelector('#full-name').focus();
+      return;
+    }
+
+    const address = document.querySelector('#address-display').textContent;
+    if (address === 'Detecting location...' || address === 'looking for direction') {
+      myAlert.render('Please select a delivery location on the map first 🐷')
+      return;
+    }
+
+    const total = document.querySelector('#total-amount').textContent;
+
+    const modalContainer = document.createElement('div');
+    modalContainer.id = 'modal-container';
+    modalContainer.innerHTML = paymentFormTemplate(total);
+    document.body.appendChild(modalContainer);
+
+    const cardExp = document.getElementById('card-exp');
+    const cardNumber = document.getElementById('card-number');
+    const custId = document.querySelector('#cust-id');
+
+    if (cardExp) {
+      cardExp.addEventListener('input', (e) => {
+        let value = e.target.value.replace(/\D/g, '');
+
+        if (value.length === 1 && value > 1) {
+          value = '0' + value;
+        }
+
+        if (value.length >= 2) {
+          let month = parseInt(value.substring(0, 2));
+
+          if (month > 12) {
+            month = 12
+          } else if (month === 0) {
+            month = 1;
+          }
+
+          let monthString = month.toString().padStart(2, '0');
+          value = monthString + value.substring(2, 4);
+        }
+
+        if (value.length >= 2) {
+          e.target.value = value.substring(0, 2) + '/' + value.substring(2, 4);
+        } else {
+          e.target.value = value;
+        }
+      });
+
+      cardExp.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && e.target.value.length === 3) {
+          cardExp.value = cardExp.value.substring(0, 2);
+        }
+      });
+    }
+
+    if (cardNumber) {
+      cardNumber.addEventListener('input', (e) => {
+        let value = e.target.value.replace(/\D/g, '');
+        let formattedValue = value.replace(/(\d{4})(?=\d)/g, '$1 ');
+        e.target.value = formattedValue;
+      });
+    }
+
+    if (custId) {
+      custId.addEventListener('input', (e) => {
+        let value = e.target.value.replace(/\D/g, '');
+
+        if (value.length > 9) {
+          value = value.substring(0, 9);
+        }
+        e.target.value = value;
+      });
+    }
+
+
+    document.querySelector('#cancel-payment').addEventListener('click', () => {
+      const overlay = document.querySelector('#modal-container');
+
+      if (overlay) {
+        overlay.classList.add('animate-fade-out');
+
+        setTimeout(() => {
+          if (document.body.contains(overlay)) {
+            document.body.removeChild(overlay);
+          }
+        }, 500);
+      }
+    });
+
+    document.querySelector('#final-payment-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const firstName = document.querySelector('#cust-fname').value;
+
+      modalContainer.innerHTML = successOrderTemplate(firstName);
+
+      localStorage.removeItem('cart');
+      sessionStorage.removeItem('donCerdonio_user');
+      updateCartBadge();
+
+      setTimeout(() => {
+        window.location.href = '../index.html';
+      }, 6000);
+    });
+
+
   });
 }
 
