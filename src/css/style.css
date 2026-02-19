@@ -883,7 +883,6 @@ body {
 /*---------------------
   PAYMENT MODAL STYLES
 ---------------------*/
-
 #modal-container {
   position: fixed;
   top: 0;
@@ -897,21 +896,37 @@ body {
   z-index: 10000;
   backdrop-filter: blur(4px);
   transition: opacity 0.3s ease;
+  padding: 10px;
 
   & .payment-content {
     font-family: var(--font-btn);
     background: white;
-    padding: 30px;
+    padding: 25px;
     border-radius: 15px;
-    max-width: 480px;
-    width: 90%;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    max-height: 90vh;
+    overflow-y: auto;
+
+    width: 95%;
+    transition: all 0.3s ease;
+
+    @media (min-width: 425px) {
+      width: 100%;
+      min-width: 400px;
+    }
+
+    @media (min-width: 768px) {
+      width: 100%;
+      min-width: 700px;
+      padding: 35px;
+    }
 
     & h2 {
       margin-top: 0;
       text-align: center;
       border-bottom: 2px solid var(--primary);
       padding-bottom: 10px;
+      font-size: 1.5rem;
     }
 
     & .payment-total {
@@ -935,17 +950,19 @@ body {
 
       & .form-row {
         display: flex;
-        gap: 10px;
-        margin-bottom: 10px;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 12px;
       }
     }
 
     & input {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       border: 1px solid #ccc;
-      border-radius: 6px;
+      border-radius: 8px;
       box-sizing: border-box;
+      font-size: 16px;
 
       &:focus {
         border-color: var(--dark);
@@ -957,17 +974,19 @@ body {
       display: flex;
       flex-direction: column;
       gap: 10px;
+      margin-top: 10px;
 
       & .primary-btn,
       & .secondary-btn {
         position: relative;
         overflow: hidden;
         border: none;
-        padding: 12px;
-        border-radius: 6px;
+        padding: 14px;
+        border-radius: 8px;
         font-weight: bold;
         cursor: pointer;
         text-align: center;
+        font-size: 1rem;
       }
 
       & .primary-btn {

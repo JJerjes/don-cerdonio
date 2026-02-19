@@ -2,6 +2,7 @@
 import { loadHeaderFooter, productCardTemplate, updateWeather, checkoutTemplate, cartItemTemplate, paymentFormTemplate, successOrderTemplate } from './utils.mjs';
 import { getCart, addToCart, removeFromCart } from './Cart.mjs';
 import Alert from './Alert.mjs';
+import { getProductImage, getNutritionData } from './externalServices.mjs';
 const myAlert = new Alert();
 
 let allProducts = [];
@@ -170,7 +171,7 @@ export async function initDeliveryMap() {
   }
 }
 
-function showCheckoutView() {
+async function showCheckoutView() {
   const homeView = document.querySelector('#home-view');
   const checkoutView = document.querySelector('#checkout-view');
   const footer = document.querySelector('#main-footer');
@@ -187,7 +188,33 @@ function showCheckoutView() {
   const cartIds = getCart();
 
   if (itemsListContainer) {
-    const cartProducts = allProducts.filter(p => cartIds.includes(p.id.toString()));
+    const cartProductsRaw = allProducts.filter(p => cartIds.includes(p.id.toString()));
+    itemsListContainer.innerHTML = '<p style="text-align:center;">Finalizing details... 🐷</p>';
+
+    const cartProducts = await Promise.all(cartProductsRaw.map(async (product) => {
+      try {
+        const [apiImage, apiCalories] = await Promise.all([
+          getProductImage(product.name),
+          getNutritionData(product.name)
+        ]);
+
+        const cals = Number(apiCalories) || Number(product.calories) || 0;
+
+        return {
+          ...product,
+          image: apiImage || product.image,
+          calories: cals,
+          dailyPercentage: ((cals / 2000) * 100).toFixed(1)
+        };
+      } catch (e) {
+        const cals = Number(product.calories) || 0;
+        return {
+          ...product,
+          calories: cals,
+          dailyPercentage: ((cals / 2000) * 100).toFixed(1)
+        };
+      }
+    }));
 
     if (cartProducts.length > 0) {
       itemsListContainer.innerHTML = cartProducts.map(product => cartItemTemplate(product, 1)).join('');
@@ -324,11 +351,11 @@ function showCheckoutView() {
   });
 }
 
-const renderProductsFromData = (dataList) => {
+const renderProductsFromData = async (dataList) => {
   const productListElement = document.querySelector('#product-list');
   if (!productListElement) return;
 
-  productListElement.innerHTML = '';
+  productListElement.innerHTML = '<p style="text-align:center; grid-column: 1/-1;">Don Cerdonio is checking the nutrients... 🐷</p>';
   const cart = getCart();
 
   if (dataList.length === 0) {
@@ -336,20 +363,52 @@ const renderProductsFromData = (dataList) => {
     return;
   }
 
-  dataList.forEach(product => {
+  const enrichedProducts = await Promise.all(dataList.map(async (product) => {
+    try {
+      const [apiImage, apiCalories] = await Promise.all([
+        getProductImage(product.name),
+        getNutritionData(product.name)
+      ]);
+
+      return {
+        ...product,
+        image: apiImage || product.image,
+        calories: Number(apiCalories) || Number(product.calories) || 0,
+        isApiFresh: true
+      };
+    } catch (error) {
+      return {
+        ...product,
+        calories: Number(product.calories) || 0,
+        isApiFresh: false
+      };
+    }
+  }));
+
+  productListElement.innerHTML = '';
+
+  enrichedProducts.forEach(product => {
+
+    const cal = product.calories;
+    product.dailyPercentage = ((cal / 2000) * 100).toFixed(1);
+
+    if (isNaN(product.dailyPercentage)) product.dailyPercentage = 0;
     const html = productCardTemplate(product);
     productListElement.insertAdjacentHTML('beforeend', html);
 
-    if (cart.includes(product.id.toString())) {
-      const cardElement = productListElement.lastElementChild;
-      const btn = cardElement.querySelector('.add-to-cart-btn');
-      const advice = cardElement.querySelector('.advice-box');
+    const cardElement = productListElement.lastElementChild;
+    const advice = cardElement.querySelector('.advice-box');
+    const btn = cardElement.querySelector('.add-to-cart-btn');
 
+    if (cart.includes(product.id.toString()) || product.isApiFresh) {
+      if (advice) advice.classList.remove('hidden');
+    }
+
+    if (cart.includes(product.id.toString())) {
       if (btn) {
         btn.textContent = 'Added! 🐷';
         btn.style.backgroundColor = '#ffd100';
       }
-      if (advice) advice.classList.remove('hidden');
     }
   });
 };
@@ -367,13 +426,13 @@ async function initCart() {
     return;
   }
 
-  const handleNav = (e) => {
+  const handleNav = async (e) => {
     e.preventDefault();
     const cart = getCart();
     if (cart.length === 0) {
       document.querySelector('#cart-error-modal').showModal();
     } else {
-      showCheckoutView();
+      await showCheckoutView();
     }
   };
 
@@ -384,20 +443,20 @@ async function initCart() {
     document.querySelector('#cart-error-modal').close();
   });
 
-  document.querySelector('#search-input')?.addEventListener('input', (e) => {
+  document.querySelector('#search-input')?.addEventListener('input', async (e) => {
     const term = e.target.value.toLowerCase().trim();
     const filtered = allProducts.filter(p =>
       p.name.toLowerCase().includes(term) || p.category.toLowerCase().includes(term)
     );
-    renderProductsFromData(filtered);
+    await renderProductsFromData(filtered);
   });
 
   document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const filtered = allProducts.filter(p => p.category === btn.dataset.category);
-      renderProductsFromData(filtered);
+      await renderProductsFromData(filtered);
     });
   });
 
@@ -416,7 +475,8 @@ async function initCart() {
   try {
     const response = await fetch('../public/json/products.json');
     allProducts = await response.json();
-    renderProductsFromData(allProducts.filter(p => p.category === 'portion'));
+    await renderProductsFromData(allProducts.filter(p => p.category === 'portion'));
+    await updateWeather();
   } catch (error) {
     console.error('Error fetching products:', error);
   }
