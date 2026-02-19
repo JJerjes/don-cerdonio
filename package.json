@@ -7,7 +7,7 @@
     "start": "vite",
     "build": "vite build --emptyOutDir",
     "lint": "eslint *.js src/**/*.js",
-    "format": "prettier --ignore-path ./.gitignore --write \"./**/*.{html,json,js,js,css}\"",
+    "format": "prettier --ignore-path ./.gitignore --write \"./**/*.{html,json,js,css}\"",
     "test": "jest"
   },
   "author": "Jerjes M.",

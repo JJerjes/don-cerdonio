@@ -23,14 +23,13 @@ Don Cerdonio is a web application specialized for a baked duck delivery business
 - `npm run lint` - Runs ESLint to check for code quality.
 
 
--"Don Cerdonio takes care of you" - Prioritizing health and flavor.
+-'Don Cerdonio takes care of you' - Prioritizing health and flavor.
 
 don-cerdonio:
 ├── node_modules
 ├── src
     ├── cart
         ├── index.html
-        └── checkout.html
     ├── css
         └── style.css
     ├── js

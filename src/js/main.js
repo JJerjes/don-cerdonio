@@ -30,4 +30,3 @@ document.addEventListener('DOMContentLoaded', () => {
 function initStore() {
   window.location.href = 'cart/index.html';
 }
-

@@ -27,8 +27,8 @@ export default class Alert {
     alertElement.className = 'alert';
 
     alertElement.innerHTML = `
-      <p>${message} <i class="fa-solid fa-piggy-bank"></i></p>
-      <span class="close-alert">&times;</span>
+      <p>${message} <i class='fa-solid fa-piggy-bank'></i></p>
+      <span class='close-alert'>&times;</span>
     `;
 
     container.prepend(alertElement);

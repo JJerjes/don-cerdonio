@@ -50,15 +50,14 @@ body {
   }
 }
 
-
 /*---------------------
     src/index.html
 ---------------------*/
 
 :root {
-  --primary: #D35400;
-  --dark: #2C3E50;
-  --white: #FFF;
+  --primary: #d35400;
+  --dark: #2c3e50;
+  --white: #fff;
   --font-main: 'Titan One', sans-serif;
   --font-btn: 'Montserrat', sans-serif;
 }
@@ -88,9 +87,9 @@ body {
 
       text-shadow:
         -3px -3px 0 var(--dark),
-        3px -3px 0 #2C3E50,
-        -3px 3px 0 #2C3E50,
-        3px 3px 0 #2C3E50,
+        3px -3px 0 #2c3e50,
+        -3px 3px 0 #2c3e50,
+        3px 3px 0 #2c3e50,
         6px 6px 0px rgba(0, 0, 0, 0.2);
 
       @media (min-width: 375px) {
@@ -306,7 +305,9 @@ body {
         font-weight: 500;
         cursor: pointer;
         color: var(--white);
-        transition: background-color 0.3s ease, color 0.3s ease;
+        transition:
+          background-color 0.3s ease,
+          color 0.3s ease;
 
         &.active {
           background: var(--primary);
@@ -353,7 +354,9 @@ body {
     gap: 10px;
     cursor: pointer;
 
-    transition: transform 0.1s ease, background-color 0.2s ease;
+    transition:
+      transform 0.1s ease,
+      background-color 0.2s ease;
     box-shadow: 0 4px 0 #a04000;
 
     &:active {

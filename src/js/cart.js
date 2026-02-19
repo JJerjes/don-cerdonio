@@ -1,5 +1,13 @@
 /* global L */
-import { loadHeaderFooter, productCardTemplate, updateWeather, checkoutTemplate, cartItemTemplate, paymentFormTemplate, successOrderTemplate } from './utils.mjs';
+import {
+  loadHeaderFooter,
+  productCardTemplate,
+  updateWeather,
+  checkoutTemplate,
+  cartItemTemplate,
+  paymentFormTemplate,
+  successOrderTemplate,
+} from './utils.mjs';
 import { getCart, addToCart, removeFromCart } from './Cart.mjs';
 import Alert from './Alert.mjs';
 import { getProductImage, getNutritionData } from './externalServices.mjs';
@@ -11,14 +19,17 @@ const storeCoords = [-12.141797, -76.943976];
 
 function getDistanceInMeters(lat1, lon1, lat2, lon2) {
   const R = 6371e3;
-  const phi1 = lat1 * Math.PI / 180;
-  const phi2 = lat2 * Math.PI / 180;
-  const deltaPhi = (lat2 - lat1) * Math.PI / 180;
-  const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+  const phi1 = (lat1 * Math.PI) / 180;
+  const phi2 = (lat2 * Math.PI) / 180;
+  const deltaPhi = ((lat2 - lat1) * Math.PI) / 180;
+  const deltaLambda = ((lon2 - lon1) * Math.PI) / 180;
 
-  const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
-    Math.cos(phi1) * Math.cos(phi2) *
-    Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+  const a =
+    Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+    Math.cos(phi1) *
+    Math.cos(phi2) *
+    Math.sin(deltaLambda / 2) *
+    Math.sin(deltaLambda / 2);
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
@@ -47,7 +58,7 @@ function updateOrderSummary() {
   const items = document.querySelectorAll('.checkout-item');
   let subtotal = 0;
 
-  items.forEach(item => {
+  items.forEach((item) => {
     const priceText = item.querySelector('.item-price').textContent;
     const price = parseFloat(priceText.replace(/[^0-9.]/g, ''));
     if (!isNaN(price)) subtotal += price;
@@ -81,7 +92,7 @@ function setupCheckoutEvents() {
     const qtyInput = itemCard.querySelector('.quantity-input');
     const priceDisplay = itemCard.querySelector('.item-price');
 
-    const product = allProducts.find(p => p.id.toString() === id.toString());
+    const product = allProducts.find((p) => p.id.toString() === id.toString());
     if (!product) return;
 
     if (btn.classList.contains('plus')) {
@@ -120,22 +131,24 @@ export async function initDeliveryMap() {
 
     const map = L.map('map', {
       tap: false,
-      zoomControl: true
+      zoomControl: true,
     }).setView(storeCoords, 15);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap'
+      attribution: '© OpenStreetMap',
     }).addTo(map);
 
     const marker = L.marker(map.getCenter()).addTo(map);
 
     const calculateAndDisplay = (customerLatLng) => {
       const distance = getDistanceInMeters(
-        storeCoords[0], storeCoords[1],
-        customerLatLng.lat, customerLatLng.lng
+        storeCoords[0],
+        storeCoords[1],
+        customerLatLng.lat,
+        customerLatLng.lng,
       );
 
-      let cost = (distance <= 1000) ? 3.00 : (distance <= 3000) ? 7.00 : 12.00;
+      let cost = distance <= 1000 ? 3.0 : distance <= 3000 ? 7.0 : 12.0;
 
       const shippingElement = document.querySelector('#shipping-cost');
       if (shippingElement) shippingElement.textContent = `$ ${cost.toFixed(2)}`;
@@ -156,7 +169,9 @@ export async function initDeliveryMap() {
       if (addressBox) addressBox.textContent = 'looking for direction';
 
       try {
-        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${center.lat}&lon=${center.lng}`);
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${center.lat}&lon=${center.lng}`,
+        );
         const data = await response.json();
         if (addressBox) addressBox.textContent = data.display_name;
       } catch (error) {
@@ -165,7 +180,6 @@ export async function initDeliveryMap() {
     });
 
     calculateAndDisplay(map.getCenter());
-
   } catch (error) {
     console.warn('Aviso de Leaflet detectado y omitido para el usuario.');
   }
@@ -188,45 +202,52 @@ async function showCheckoutView() {
   const cartIds = getCart();
 
   if (itemsListContainer) {
-    const cartProductsRaw = allProducts.filter(p => cartIds.includes(p.id.toString()));
-    itemsListContainer.innerHTML = '<p style="text-align:center;">Finalizing details... 🐷</p>';
+    const cartProductsRaw = allProducts.filter((p) =>
+      cartIds.includes(p.id.toString()),
+    );
+    itemsListContainer.innerHTML =
+      '<p style="text - align: center; ">Finalizing details... 🐷</p>';
 
-    const cartProducts = await Promise.all(cartProductsRaw.map(async (product) => {
-      try {
-        const [apiImage, apiCalories] = await Promise.all([
-          getProductImage(product.name),
-          getNutritionData(product.name)
-        ]);
+    const cartProducts = await Promise.all(
+      cartProductsRaw.map(async (product) => {
+        try {
+          const [apiImage, apiCalories] = await Promise.all([
+            getProductImage(product.name),
+            getNutritionData(product.name),
+          ]);
 
-        const cals = Number(apiCalories) || Number(product.calories) || 0;
+          const cals = Number(apiCalories) || Number(product.calories) || 0;
 
-        return {
-          ...product,
-          image: apiImage || product.image,
-          calories: cals,
-          dailyPercentage: ((cals / 2000) * 100).toFixed(1)
-        };
-      } catch (e) {
-        const cals = Number(product.calories) || 0;
-        return {
-          ...product,
-          calories: cals,
-          dailyPercentage: ((cals / 2000) * 100).toFixed(1)
-        };
-      }
-    }));
+          return {
+            ...product,
+            image: apiImage || product.image,
+            calories: cals,
+            dailyPercentage: ((cals / 2000) * 100).toFixed(1),
+          };
+        } catch (e) {
+          const cals = Number(product.calories) || 0;
+          return {
+            ...product,
+            calories: cals,
+            dailyPercentage: ((cals / 2000) * 100).toFixed(1),
+          };
+        }
+      }),
+    );
 
     if (cartProducts.length > 0) {
-      itemsListContainer.innerHTML = cartProducts.map(product => cartItemTemplate(product, 1)).join('');
+      itemsListContainer.innerHTML = cartProducts
+        .map((product) => cartItemTemplate(product, 1))
+        .join('');
       setupCheckoutEvents();
       updateOrderSummary();
 
       setTimeout(() => {
         initDeliveryMap();
       }, 300);
-
     } else {
-      itemsListContainer.innerHTML = '<p style="text-align:center; padding: 20px;">Your cart is empty 🐷</p>';
+      itemsListContainer.innerHTML =
+        '<p style="text - align: center; padding: 20px;">Your cart is empty 🐷</p>';
     }
   }
 
@@ -246,8 +267,11 @@ async function showCheckoutView() {
     }
 
     const address = document.querySelector('#address-display').textContent;
-    if (address === 'Detecting location...' || address === 'looking for direction') {
-      myAlert.render('Please select a delivery location on the map first 🐷')
+    if (
+      address === 'Detecting location...' ||
+      address === 'looking for direction'
+    ) {
+      myAlert.render('Please select a delivery location on the map first 🐷');
       return;
     }
 
@@ -274,7 +298,7 @@ async function showCheckoutView() {
           let month = parseInt(value.substring(0, 2));
 
           if (month > 12) {
-            month = 12
+            month = 12;
           } else if (month === 0) {
             month = 1;
           }
@@ -316,7 +340,6 @@ async function showCheckoutView() {
       });
     }
 
-
     document.querySelector('#cancel-payment').addEventListener('click', () => {
       const overlay = document.querySelector('#modal-container');
 
@@ -331,23 +354,23 @@ async function showCheckoutView() {
       }
     });
 
-    document.querySelector('#final-payment-form').addEventListener('submit', (e) => {
-      e.preventDefault();
+    document
+      .querySelector('#final-payment-form')
+      .addEventListener('submit', (e) => {
+        e.preventDefault();
 
-      const firstName = document.querySelector('#cust-fname').value;
+        const firstName = document.querySelector('#cust-fname').value;
 
-      modalContainer.innerHTML = successOrderTemplate(firstName);
+        modalContainer.innerHTML = successOrderTemplate(firstName);
 
-      localStorage.removeItem('cart');
-      sessionStorage.removeItem('donCerdonio_user');
-      updateCartBadge();
+        localStorage.removeItem('cart');
+        sessionStorage.removeItem('donCerdonio_user');
+        updateCartBadge();
 
-      setTimeout(() => {
-        window.location.href = '../index.html';
-      }, 6000);
-    });
-
-
+        setTimeout(() => {
+          window.location.href = '../index.html';
+        }, 6000);
+      });
   });
 }
 
@@ -355,40 +378,43 @@ const renderProductsFromData = async (dataList) => {
   const productListElement = document.querySelector('#product-list');
   if (!productListElement) return;
 
-  productListElement.innerHTML = '<p style="text-align:center; grid-column: 1/-1;">Don Cerdonio is checking the nutrients... 🐷</p>';
+  productListElement.innerHTML =
+    '<p style="text - align: center; grid - column: 1 / -1; ">Don Cerdonio is checking the nutrients... 🐷</p>';
   const cart = getCart();
 
   if (dataList.length === 0) {
-    productListElement.innerHTML = '<p class="no-results" style="grid-column: 1/-1; text-align:center; padding: 20px;">No products found... 🐷</p>';
+    productListElement.innerHTML =
+      '<p class="no - results" style="grid - column: 1 / -1; text - align: center; padding: 20px;">No products found... 🐷</p>';
     return;
   }
 
-  const enrichedProducts = await Promise.all(dataList.map(async (product) => {
-    try {
-      const [apiImage, apiCalories] = await Promise.all([
-        getProductImage(product.name),
-        getNutritionData(product.name)
-      ]);
+  const enrichedProducts = await Promise.all(
+    dataList.map(async (product) => {
+      try {
+        const [apiImage, apiCalories] = await Promise.all([
+          getProductImage(product.name),
+          getNutritionData(product.name),
+        ]);
 
-      return {
-        ...product,
-        image: apiImage || product.image,
-        calories: Number(apiCalories) || Number(product.calories) || 0,
-        isApiFresh: true
-      };
-    } catch (error) {
-      return {
-        ...product,
-        calories: Number(product.calories) || 0,
-        isApiFresh: false
-      };
-    }
-  }));
+        return {
+          ...product,
+          image: apiImage || product.image,
+          calories: Number(apiCalories) || Number(product.calories) || 0,
+          isApiFresh: true,
+        };
+      } catch (error) {
+        return {
+          ...product,
+          calories: Number(product.calories) || 0,
+          isApiFresh: false,
+        };
+      }
+    }),
+  );
 
   productListElement.innerHTML = '';
 
-  enrichedProducts.forEach(product => {
-
+  enrichedProducts.forEach((product) => {
     const cal = product.calories;
     product.dailyPercentage = ((cal / 2000) * 100).toFixed(1);
 
@@ -443,19 +469,27 @@ async function initCart() {
     document.querySelector('#cart-error-modal').close();
   });
 
-  document.querySelector('#search-input')?.addEventListener('input', async (e) => {
-    const term = e.target.value.toLowerCase().trim();
-    const filtered = allProducts.filter(p =>
-      p.name.toLowerCase().includes(term) || p.category.toLowerCase().includes(term)
-    );
-    await renderProductsFromData(filtered);
-  });
+  document
+    .querySelector('#search-input')
+    ?.addEventListener('input', async (e) => {
+      const term = e.target.value.toLowerCase().trim();
+      const filtered = allProducts.filter(
+        (p) =>
+          p.name.toLowerCase().includes(term) ||
+          p.category.toLowerCase().includes(term),
+      );
+      await renderProductsFromData(filtered);
+    });
 
-  document.querySelectorAll('.tab-btn').forEach(btn => {
+  document.querySelectorAll('.tab-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document
+        .querySelectorAll('.tab-btn')
+        .forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
-      const filtered = allProducts.filter(p => p.category === btn.dataset.category);
+      const filtered = allProducts.filter(
+        (p) => p.category === btn.dataset.category,
+      );
       await renderProductsFromData(filtered);
     });
   });
@@ -466,7 +500,10 @@ async function initCart() {
       if (addToCart(productId)) {
         e.target.textContent = 'Added! 🐷';
         e.target.style.backgroundColor = '#ffd100';
-        e.target.closest('.product-card').querySelector('.advice-box')?.classList.remove('hidden');
+        e.target
+          .closest('.product-card')
+          .querySelector('.advice-box')
+          ?.classList.remove('hidden');
         updateCartBadge();
       }
     }
@@ -475,7 +512,9 @@ async function initCart() {
   try {
     const response = await fetch('../public/json/products.json');
     allProducts = await response.json();
-    await renderProductsFromData(allProducts.filter(p => p.category === 'portion'));
+    await renderProductsFromData(
+      allProducts.filter((p) => p.category === 'portion'),
+    );
     await updateWeather();
   } catch (error) {
     console.error('Error fetching products:', error);
